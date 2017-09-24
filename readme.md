@@ -1,10 +1,9 @@
 # Crossword
 
-Simple app to create and complete crossword puzzles.
+Simple app to create and complete crossword puzzles. Built with Vue.
 
-Requires a modern browser.
+Requires a modern browser:
 
-- vue.js
 - CSS grid
 - ES6: `Array.from`, `Array.some`, `Array.isArray`, destructuring
 
