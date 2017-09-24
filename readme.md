@@ -15,12 +15,10 @@ Navigate with arrow keys.
 
 ## Example
 
-<div style="text-align: center">
-	<img src="blokraai.png">
-</div>
+![Example](blokraai.png)
 
 ## TODO
 
-- Numbering
+- ~~Numbering~~
 - Add some tools like a scratchpad or generate possible word permutations
-- Export / share
+- Export / share (simple encoding of values in URL)

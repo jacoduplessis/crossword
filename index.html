@@ -3,255 +3,313 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  
+
   <title>Crossword</title>
   <script src="vue.min.js"></script>
   <style>
-  * {
-    box-sizing: inherit
-  }
+    * {
+      box-sizing: inherit
+    }
 
-  *:before, *:after {
-    box-sizing: inherit
-  }
+    *:before, *:after {
+      box-sizing: inherit
+    }
 
-  html {
-    box-sizing: border-box;
-  }
+    html {
+      box-sizing: border-box;
+    }
 
-  input, textarea {
-    font-family: monospace;
-    padding: .5rem 0.8rem;
-    border: 1px solid #000;
-  }
+    input, textarea {
+      font-family: monospace;
+      padding: .5rem 0.8rem;
+      border: 1px solid #000;
+    }
 
-  .cell {
-    text-transform: uppercase;
-    font-size: 20px;
-    font-weight: 600;
-    width: 100%;
-  }
+    .cell {
+      text-transform: uppercase;
+      font-size: 20px;
+      font-weight: 600;
+      width: 100%;
+    }
 
-  .cell:focus {
-    background-color: lightyellow;
-  }
+    .cell:focus {
+      background-color: lightyellow;
+    }
 
-  .black {
-    background-color: #000 !important;
-  }
+    .black {
+      background-color: #000 !important;
+    }
 
-  .grid {
-    display: grid;
-    grid-gap: 0;
-    justify-content: center;
-  }
+    .grid {
+      display: grid;
+      grid-gap: 0;
+      justify-content: center;
+    }
 
-  #container {
-    padding: 1rem;
-    max-width: 800px;
-    margin-left: auto;
-    margin-right: auto;
-  }
+    #container {
+      padding: 1rem;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
 
-  button {
-    padding: 0.5rem 0.8rem;
-    text-transform: uppercase;
-    font-weight: 600;
-    background-color: rgba(0,0,0,0);
-    border: 1px solid #000;
-    font-family: monospace;
-  }
+    button {
+      padding: 0.5rem 0.8rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      background-color: rgba(0, 0, 0, 0);
+      border: 1px solid #000;
+      font-family: monospace;
+    }
 
-  .cell-container {
-    position: relative;
-  }
+    button:hover {
+      background-color: lightsteelblue;
+      cursor: pointer;
+    }
 
-  .cell-number {
-    position: absolute;
-    font-size: 0.8rem;
-    font-weight: 600;
-    top: 0.1rem;
-    left: 0.2rem;
-  }
+    .cell-container {
+      position: relative;
+    }
 
-</style>
+    .cell-number {
+      position: absolute;
+      font-size: 0.7rem;
+      font-weight: 600;
+      top: 0.1rem;
+      left: 0.2rem;
+    }
+
+
+  </style>
 </head>
 <body>
 
-  <div id="container">
-    <div id="app">
-      <div style="text-align: center; margin-bottom: 1rem">
-        <input name="n" type="number" step="1" min="2" max="30" v-model="n" style="min-width: 50px">
-        <button @click="clear">clear</button>
-        <button @click="save">save</button>
-        <button @click="load">load</button>
-      </div>
-      <div class="grid" ref="grid">
-        <div class="cell-container" v-for="(g, index) in N">
-          <!-- <span class="cell-number" v-if="numbers[index] !== 0">{{ numbers[index] }}</span> -->
-          <input class="cell" 
-          @input="process($event, index)" 
-          @focus="$event.target.select()"
-          @keyup.up="up(index)"
-          @keyup.down="down(index)"
-          @keyup.right="right(index)"
-          @keyup.left="left(index)"
-          :id="'cell-' + index"
-          :value="values[index]"  
-          :class="{ black: blacks[index] }"
-          :data-index="index">
-        </div>
+<div id="container">
+  <div id="app">
+    <div style="text-align: center; margin-bottom: 1rem">
+      <input name="n" type="number" step="1" min="2" max="30" v-model="n" style="min-width: 50px">
+      <button @click="clear">clear</button>
+      <button @click="save">save</button>
+      <button @click="load">load</button>
+    </div>
+    <pre style="position: fixed;left: 10px; top:10px">{{info}}</pre>
+    <div class="grid" ref="grid">
+      <div class="cell-container" v-for="(g, index) in N">
+        <span class="cell-number" v-if="numbers[index] !== 0">{{ numbers[index] }}</span>
+        <input class="cell"
+               @input="process($event, index)"
+               @focus="didFocus($event, index)"
+               @keyup.up="up(index)"
+               @keyup.down="down(index)"
+               @keyup.right="right(index)"
+               @keyup.left="left(index)"
+               :id="'cell-' + index"
+               :value="values[index]"
+               :class="{ black: blacks[index] }"
+               :data-index="index">
       </div>
     </div>
   </div>
+</div>
 
-  <script>
+<script>
 
-    function range(n) {
-      return Array.from(Array(n).keys())
+  function range(n) {
+    return Array.from(Array(n).keys())
+  }
+
+  function transposeTables(n) {
+
+    const N = n * n
+    const A = range(N)
+    const rows = []
+    const columns = []
+
+    range(n).forEach(() => {
+      rows.push([])
+      columns.push([])
+    })
+
+    A.forEach((a, i) => {
+      rows[Math.floor(i / n)].push(a)
+      columns[i % n].push(a)
+    })
+
+    function flatten(A) {
+      const flat = [].concat(...A);
+      return flat.some(Array.isArray) ? flatten(flat) : flat;
     }
 
-    function transposeTables(n) {
+    const rotate90 = flatten(columns.map(col => col.slice(0).reverse()))
+    const rotate270 = rotate90.slice(0).reverse()
+    const rotate180 = flatten(A.reduce((agg, a, i) => {
+      agg[N - 1 - i] = a
+      return agg
+    }, []))
 
-      const N = n*n
-      const A = range(N)
-      const rows = []
-      const columns = []
+    return {
+      "90": rotate90,
+      "180": rotate180,
+      "270": rotate270,
+    }
+  }
 
-      range(n).forEach(() => {
-        rows.push([])
-        columns.push([])
-      })
 
-      A.forEach((a, i) => {
-        rows[Math.floor(i/n)].push(a)
-        columns[i%n].push(a)
-      })
-
-      function flatten(A) {
-        const flat = [].concat(...A);
-        return flat.some(Array.isArray) ? flatten(flat) : flat;
-      }
-
-      const rotate90 = flatten(columns.map(col => col.slice(0).reverse()))
-      const rotate270 = rotate90.slice(0).reverse()
-      const rotate180 = flatten(A.reduce((agg, a, i) => {
-        agg[N-1-i] = a
-        return agg
-      }, []))
-
+  const app = new Vue({
+    el: "#app",
+    data() {
       return {
-        "90": rotate90,
-        "180": rotate180,
-        "270": rotate270,
-      }  
-    }
+        n: 13,
+        values: [],
+        blacks: [],
+        transpose: {},
+        numbers: [],
+        info: '',
+      }
+    },
+    created() {
+      this.$watch('n', this.updateGrid)
+    },
+    mounted() {
+      this.updateGrid(this.n)
+    },
+    computed: {
+      N() {
+        return this.n * this.n
+      },
+    },
+    methods: {
+      indexAbove(index) {
+        return Math.max(0, index - this.n)
+      },
+      indexBelow(index) {
+        return Math.min(this.N, index + this.n)
+      },
+      indexRight(index) {
+        return Math.min(this.N, index + 1)
+      },
+      indexLeft(index) {
+        return Math.max(0, index - 1)
+      },
+      down(index) {
+        this.focus(this.indexBelow(index))
+      },
+      up(index) {
+        this.focus(this.indexAbove((index)))
+      },
+      right(index) {
+        this.focus(this.indexRight(index))
+      },
+      left(index) {
+        this.focus(this.indexLeft(index))
+      },
+      row(index) {
+        return Math.floor(index / this.n)
+      },
+      column(index) {
+        return index % this.n
+      },
+      cellRight(index) {
+        if (this.column(index) === this.n - 1) return false
+        return !this.blacks[this.indexRight(index)]
+      },
+      cellBelow(index) {
+        return this.row(index) === this.n - 1 ? false : !this.blacks[this.indexBelow(index)]
+      },
+      cellLeft(index) {
+        return this.column(index) === 0 ? false : !this.blacks[this.indexLeft(index)]
+      },
+      cellAbove(index) {
+        return this.row(index) === 0 ? false : !this.blacks[this.indexAbove(index)]
+      },
 
 
-    const app = new Vue({
-      el: "#app",
-      data() {
-        return {
-          n: 13,
-          values: [],
-          blacks: [],
-          transpose: {},
-          numbers: [],
+      didFocus(event, index) {
+        event.target.select()
+        this.info = `
+index: ${index}
+row: ${this.row(index)}
+column: ${this.column(index)}
+cellLeft: ${this.cellLeft(index)}
+cellRight: ${this.cellRight(index)}
+cellAbove: ${this.cellAbove(index)}
+cellBelow: ${this.cellBelow(index)}
+`
+      },
+      focus(index) {
+        const el = document.querySelector(`#cell-${index}`)
+        if (el) {
+          el.focus()
+          el.select()
         }
       },
-      created() {
-        this.$watch('n', this.updateGrid)
+      process(event, index) {
+        const value = event.target.value
+        this.values.splice(index, 1, value)
+        this.focus(index + 1)
+        const wasBlack = !!this.blacks[index]
+        const black = value === '`'
+        if (black && !wasBlack) {
+          this.processBlack(index)
+          this.updateNumbers()
+        }
       },
-      mounted() {
-        this.updateGrid(this.n)
-      },
-      computed: {
-        N() { return this.n*this.n },
-        c() { return this.n/2 },
-        transposeTable() { return transposeTable(this.n)} 
-      },
-      methods: {
-        indexAbove(index) { return Math.max(0, index-this.n)},
-        indexBelow(index) { return Math.min(this.N, index+this.n)},
-        indexRight(index) { return Math.min(this.N, index+1)},
-        indexLeft(index) {return Math.max(0, index-1)},
-        down(index) { this.focus(this.indexBelow(index))},
-        up(index) { this.focus(this.indexAbove((index)))},
-        right(index)  { this.focus(this.indexRight(index))},
-        left(index) { this.focus(this.indexLeft(index))},
-        focus(index) {
-          const el = document.querySelector(`#cell-${index}`)
-          if (el) {
-            el.focus()
-            el.select()
-          }
-        },
-        process(event, index) {
-          const value = event.target.value
-          this.values.splice(index, 1, value)
-          this.focus(index+1)
-          const wasBlack = !!this.blacks[index]
-          const black = ['`', '-'].includes(value)
-          if (wasBlack === black) return
-          const other = [
+      processBlack(index) {
+        const other = [
           this.transpose['90'][index],
           this.transpose['180'][index],
           this.transpose['270'][index],
-          ];
-          other.forEach(i => this.blacks.splice(i, 1, black))
-          this.blacks.splice(index, 1, black)
-          this.updateNumbers()
-          
-        },
-        updateGrid(n) {
-          n = +n
-          this.values = Array(n*n).fill("")
-          this.blacks = Array(n*n).fill(false)
-          this.numbers = Array(n*n).fill(0)
-          this.$refs.grid.style['grid-template-rows'] = `repeat(${n}, 40px)`
-          this.$refs.grid.style['grid-template-columns'] = `repeat(${n}, 40px)`
-          this.transpose = transposeTables(n)
-        },
-        clear() {
-          const N = this.n*this.n
-          this.values = Array(N).fill("")
-          this.blacks = Array(N).fill(false)
-          this.numbers = Array(N).fill(0)
-        },
-        save() {
-          localStorage.setItem('c', JSON.stringify({
-            n: this.n,
-            numbers: this.numbers,
-            values: this.values,
-            blacks: this.blacks,
-          }))
-        },
-        load() {
-          const data = JSON.parse(localStorage.getItem('c'))
-          this.n = data.n
-          this.numbers = data.numbers
-          this.values = data.values
-          this.blacks = data.blacks
-        },
-        updateNumbers() {
-          
-          let counter = 1;
-          const numbers = Array(this.n*this.n).fill(0)
-          this.blacks.forEach((black, index) => {
-            if (black) return 0
-            const cellBelow = !!this.blacks[this.indexLeft(index)]   
-            const numberLeft = numbers[this.indexLeft(index)] !== 0
-            if (cellBelow && !numberLeft) {
-                numbers[index] = counter
-                counter++              
-            }
-            
-          })
-          this.numbers = numbers
-        }
-      }
-    })
+        ];
+        other.forEach(i => this.blacks.splice(i, 1, true))
+        this.blacks.splice(index, 1, true)
+      },
 
-  </script>
+      updateGrid(n) {
+        this.clear()
+        this.$refs.grid.style['grid-template-rows'] = `repeat(${n}, 40px)`
+        this.$refs.grid.style['grid-template-columns'] = `repeat(${n}, 40px)`
+        this.transpose = transposeTables(n)
+      },
+      clear() {
+        const N = this.n * this.n
+        this.values = Array(N).fill("")
+        this.blacks = Array(N).fill(false)
+        this.numbers = Array(N).fill(0)
+      },
+      save() {
+        localStorage.setItem('c', JSON.stringify({
+          n: this.n,
+          values: this.values,
+        }))
+      },
+      load() {
+        const data = JSON.parse(localStorage.getItem('c'))
+        this.n = data.n
+        this.values = data.values
+        this.blacks = data.values.map(v => v === '`')
+        this.blacks.forEach((b, i) => { if (b) this.processBlack(i)})
+        this.updateNumbers()
+      },
+      updateNumbers() {
+
+        let counter = 1;
+        const numbers = Array(this.n * this.n).fill(0)
+        this.blacks.forEach((black, index) => {
+          if (black) return 0
+
+          // horizontal || vertical
+          if ((this.cellRight(index) && !this.cellLeft(index)) ||
+            (this.cellBelow(index) && !this.cellAbove(index))) {
+            numbers[index] = counter
+            counter++
+          }
+
+        })
+        this.numbers = numbers
+      }
+    }
+  })
+
+</script>
 </body>
 </html>
