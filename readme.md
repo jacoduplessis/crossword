@@ -21,3 +21,5 @@ Navigate with arrow keys.
 - ~~Numbering~~
 - Add some tools like a scratchpad or generate possible word permutations
 - Export / share (simple encoding of values in URL)
+- Service worker for offline usage
+- Remove framework?
