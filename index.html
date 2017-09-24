@@ -95,8 +95,8 @@
     </div>
 
     <div v-show="shareDisplay" style="display: flex; margin-bottom: 1rem">
-    <input :value="shareURL" ref="share" style="flex-grow: 1">
-    <button @click="shareDisplay = false" style="margin-left: 0.3rem">hide</button>
+      <input :value="shareURL" ref="share" style="flex-grow: 1">
+      <button @click="shareDisplay = false" style="margin-left: 0.3rem">hide</button>
     </div>
     <!--<pre style="position: fixed;left: 10px; top:10px">{{info}}</pre>-->
     <div class="grid" ref="grid">
@@ -176,7 +176,7 @@
       }
     },
     watch: {
-      n: function(n) {
+      n: function (n) {
         this.transpose = transposeTables(n)
         this.updateGrid(n)
       }
@@ -186,13 +186,17 @@
       const u = new URL(document.location)
       const v = u.searchParams.get('v')
       const n = u.searchParams.get('n')
-      if (!(v && n)) return
-      const values = v.split('').map(v => {
-        if (v === '-') return '`'
-        if (v === '_') return ''
-        return v
-      })
-      this.load(parseInt(n), values)
+      if (v && n) {
+        const values = v.split('').map(v => {
+          if (v === '-') return '`'
+          if (v === '_') return ''
+          return v
+        })
+        this.load(parseInt(n), values)
+      } else {
+        this.transpose = transposeTables(this.n)
+      }
+
 
     },
     mounted() {
