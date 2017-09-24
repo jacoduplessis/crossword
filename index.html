@@ -118,8 +118,13 @@
     return Array.from(Array(n).keys())
   }
 
-  function transposeTables(n) {
+  function flatten(A) {
+    const flat = [].concat(...A);
+    return flat.some(Array.isArray) ? flatten(flat) : flat;
+  }
 
+  function transposeTables(n) {
+    n = +n
     const N = n * n
     const A = range(N)
     const rows = []
@@ -134,11 +139,6 @@
       rows[Math.floor(i / n)].push(a)
       columns[i % n].push(a)
     })
-
-    function flatten(A) {
-      const flat = [].concat(...A);
-      return flat.some(Array.isArray) ? flatten(flat) : flat;
-    }
 
     const rotate90 = flatten(columns.map(col => col.slice(0).reverse()))
     const rotate270 = rotate90.slice(0).reverse()
@@ -268,7 +268,7 @@ cellBelow: ${this.cellBelow(index)}
         this.clear()
         this.$refs.grid.style['grid-template-rows'] = `repeat(${n}, 40px)`
         this.$refs.grid.style['grid-template-columns'] = `repeat(${n}, 40px)`
-        this.transpose = transposeTables(n)
+        this.transpose = transposeTables(+n)
       },
       clear() {
         const N = this.n * this.n
@@ -287,7 +287,9 @@ cellBelow: ${this.cellBelow(index)}
         this.n = data.n
         this.values = data.values
         this.blacks = data.values.map(v => v === '`')
-        this.blacks.forEach((b, i) => { if (b) this.processBlack(i)})
+        this.blacks.forEach((b, i) => {
+          if (b) this.processBlack(i)
+        })
         this.updateNumbers()
       },
       updateNumbers() {
