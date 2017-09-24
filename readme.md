@@ -1,6 +1,6 @@
 # Crossword
 
-Simple app create and complete crossword puzzles.
+Simple app to create and complete crossword puzzles.
 
 Requires a modern browser.
 
@@ -16,3 +16,5 @@ Navigate with arrow keys.
 ## TODO
 
 - Numbering
+- Add some tools like a scratchpad or generate possible word permutations
+- Export / share
