@@ -1,11 +1,8 @@
 # Crossword
 
-Simple app to create and complete crossword puzzles. Built with Vue.
+Simple app to create, complete and share crossword puzzles. Built with Vue.
 
-Requires a modern browser:
-
-- CSS grid
-- ES6: `Array.from`, `Array.some`, `Array.isArray`, destructuring
+Requires a modern browser.
 
 ## Usage
 
@@ -18,8 +15,6 @@ Navigate with arrow keys.
 
 ## TODO
 
-- ~~Numbering~~
 - Add some tools like a scratchpad or generate possible word permutations
-- Export / share (simple encoding of values in URL)
 - Service worker for offline usage
 - Remove framework?

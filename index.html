@@ -90,7 +90,13 @@
       <input name="n" type="number" step="1" min="2" max="30" v-model.number="n" style="min-width: 50px">
       <button @click="clear">clear</button>
       <button @click="save">save</button>
-      <button @click="load">load</button>
+      <button @click="loadFromStorage">load</button>
+      <button @click="share">share</button>
+    </div>
+
+    <div v-show="shareDisplay" style="display: flex; margin-bottom: 1rem">
+    <input :value="shareURL" ref="share" style="flex-grow: 1">
+    <button @click="shareDisplay = false" style="margin-left: 0.3rem">hide</button>
     </div>
     <!--<pre style="position: fixed;left: 10px; top:10px">{{info}}</pre>-->
     <div class="grid" ref="grid">
@@ -165,10 +171,29 @@
         transpose: {},
         numbers: [],
         info: '',
+        shareDisplay: false,
+        shareURL: '',
+      }
+    },
+    watch: {
+      n: function(n) {
+        this.transpose = transposeTables(n)
+        this.updateGrid(n)
       }
     },
     created() {
-      this.$watch('n', this.updateGrid)
+      this.clear()
+      const u = new URL(document.location)
+      const v = u.searchParams.get('v')
+      const n = u.searchParams.get('n')
+      if (!(v && n)) return
+      const values = v.split('').map(v => {
+        if (v === '-') return '`'
+        if (v === '_') return ''
+        return v
+      })
+      this.load(parseInt(n), values)
+
     },
     mounted() {
       this.updateGrid(this.n)
@@ -258,6 +283,7 @@ indexBelow: ${this.indexBelow(index)}
         }
       },
       processBlack(index, black) {
+
         const other = [
           this.transpose['90'][index],
           this.transpose['180'][index],
@@ -268,10 +294,8 @@ indexBelow: ${this.indexBelow(index)}
       },
 
       updateGrid(n) {
-        this.clear()
         this.$refs.grid.style['grid-template-rows'] = `repeat(${n}, 40px)`
         this.$refs.grid.style['grid-template-columns'] = `repeat(${n}, 40px)`
-        this.transpose = transposeTables(n)
       },
       clear() {
         const N = this.n * this.n
@@ -279,19 +303,37 @@ indexBelow: ${this.indexBelow(index)}
         this.blacks = Array(N).fill(false)
         this.numbers = Array(N).fill(0)
       },
-      save() {
+      save(event) {
+        const btn = event.target
+        btn.style.backgroundColor = 'darkseagreen'
+        setTimeout(() => btn.style.backgroundColor = '', 1000)
         localStorage.setItem('c', JSON.stringify({
           n: this.n,
           values: this.values,
         }))
       },
-      load() {
-        const data = JSON.parse(localStorage.getItem('c'))
-        this.n = data.n
-        this.values = data.values
-        this.blacks = data.values.map(v => v === '`')
-        this.blacks.forEach((b, i) => {
-          if (b) this.processBlack(i)
+      share() {
+        const values = this.values.map(v => {
+          if (v === '') return '_'
+          if (v === '`') return '-'
+          return v
+        })
+        this.shareURL = document.location.origin + document.location.pathname + `?v=${values.join('')}&n=${this.n}`
+        this.shareDisplay = true
+        setTimeout(() => this.$refs.share.select(), 10)
+      },
+      loadFromStorage() {
+        const {n, values} = JSON.parse(localStorage.getItem('c'))
+        this.load(n, values)
+      },
+      load(n, values) {
+        this.n = n
+        this.values = values
+        this.transpose = transposeTables(n)
+        const blacks = values.map(v => v === '`')
+        this.blacks = blacks
+        blacks.forEach((b, i) => {
+          if (b) this.processBlack(i, b)
         })
         this.updateNumbers()
       },
