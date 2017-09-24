@@ -96,6 +96,7 @@
 
     <div v-show="shareDisplay" style="display: flex; margin-bottom: 1rem">
       <input :value="shareURL" ref="share" style="flex-grow: 1">
+      <button @click="copy" style="margin-left: 0.3rem">copy</button>
       <button @click="shareDisplay = false" style="margin-left: 0.3rem">hide</button>
     </div>
     <!--<pre style="position: fixed;left: 10px; top:10px">{{info}}</pre>-->
@@ -322,9 +323,13 @@ indexBelow: ${this.indexBelow(index)}
           if (v === '`') return '-'
           return v
         })
-        this.shareURL = document.location.origin + document.location.pathname + `?v=${values.join('')}&n=${this.n}`
+        this.shareURL = document.location.origin + document.location.pathname + `?n=${this.n}&v=${values.join('')}`
         this.shareDisplay = true
         setTimeout(() => this.$refs.share.select(), 10)
+      },
+      copy() {
+        this.$refs.share.select()
+        document.execCommand('copy')
       },
       loadFromStorage() {
         const {n, values} = JSON.parse(localStorage.getItem('c'))
