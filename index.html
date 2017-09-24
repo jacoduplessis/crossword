@@ -87,7 +87,7 @@
 <div id="container">
   <div id="app">
     <div style="text-align: center; margin-bottom: 1rem">
-      <input name="n" type="number" step="1" min="2" max="30" v-model="n" style="min-width: 50px">
+      <input name="n" type="number" step="1" min="2" max="30" v-model.number="n" style="min-width: 50px">
       <button @click="clear">clear</button>
       <button @click="save">save</button>
       <button @click="load">load</button>
@@ -124,7 +124,7 @@
   }
 
   function transposeTables(n) {
-    n = +n
+    n = parseInt(n)
     const N = n * n
     const A = range(N)
     const rows = []
@@ -234,6 +234,8 @@ cellLeft: ${this.cellLeft(index)}
 cellRight: ${this.cellRight(index)}
 cellAbove: ${this.cellAbove(index)}
 cellBelow: ${this.cellBelow(index)}
+black: ${this.blacks[index]}
+indexBelow: ${this.indexBelow(index)}
 `
       },
       focus(index) {
@@ -250,26 +252,26 @@ cellBelow: ${this.cellBelow(index)}
         else this.focus(this.indexRight(index))
         const wasBlack = !!this.blacks[index]
         const black = value === '`'
-        if (black && !wasBlack) {
-          this.processBlack(index)
+        if ((black && !wasBlack) || (!black && wasBlack)) {
+          this.processBlack(index, black)
           this.updateNumbers()
         }
       },
-      processBlack(index) {
+      processBlack(index, black) {
         const other = [
           this.transpose['90'][index],
           this.transpose['180'][index],
           this.transpose['270'][index],
         ];
-        other.forEach(i => this.blacks.splice(i, 1, true))
-        this.blacks.splice(index, 1, true)
+        other.forEach(i => this.blacks.splice(i, 1, black))
+        this.blacks.splice(index, 1, black)
       },
 
       updateGrid(n) {
         this.clear()
         this.$refs.grid.style['grid-template-rows'] = `repeat(${n}, 40px)`
         this.$refs.grid.style['grid-template-columns'] = `repeat(${n}, 40px)`
-        this.transpose = transposeTables(+n)
+        this.transpose = transposeTables(n)
       },
       clear() {
         const N = this.n * this.n
