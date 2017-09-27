@@ -41,6 +41,10 @@
       color: #000 !important;
     }
 
+    .empty {
+      color: #fff !important;
+    }
+
     .grid {
       display: grid;
       grid-gap: 0;
@@ -54,13 +58,21 @@
       margin-right: auto;
     }
 
-    button {
-      padding: 0.5rem 0.8rem;
+    label {
+      margin-left: 0.6rem;
+      margin-right: 0.3rem;
+    }
+
+    button, label {
       text-transform: uppercase;
       font-weight: 600;
+      font-family: monospace;
+    }
+
+    button {
+      padding: 0.5rem 0.8rem;
       background-color: rgba(0, 0, 0, 0);
       border: 1px solid #000;
-      font-family: monospace;
     }
 
     button:hover {
@@ -88,17 +100,26 @@
 <div id="container">
   <div id="app">
     <div style="text-align: center; margin-bottom: 1rem">
-      <input name="n" type="number" step="1" min="2" max="30" v-model.number="n" style="min-width: 50px">
+
+      <button @click="showOptions = true">options</button>
       <button @click="clear">clear</button>
       <button @click="save">save</button>
       <button @click="loadFromStorage">load</button>
       <button @click="share">share</button>
     </div>
 
-    <div v-show="shareDisplay" style="display: flex; margin-bottom: 1rem">
+    <div v-show="showOptions" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem">
+      <label>Size</label>
+      <input name="n" type="number" step="1" min="2" max="30" v-model.number="n" style="min-width: 50px">
+      <label>Symmetric</label>
+      <input type="checkbox" v-model="symmetric">
+      <button @click="showOptions = false" style="margin-left: 0.3rem">hide</button>
+    </div>
+
+    <div v-show="showShare" style="display: flex; margin-bottom: 1rem">
       <input :value="shareURL" ref="share" style="flex-grow: 1">
       <button @click="copy" style="margin-left: 0.3rem">copy</button>
-      <button @click="shareDisplay = false" style="margin-left: 0.3rem">hide</button>
+      <button @click="showShare = false" style="margin-left: 0.3rem">hide</button>
     </div>
     <!--<pre style="position: fixed;left: 10px; top:10px">{{info}}</pre>-->
     <div class="grid" ref="grid">
@@ -113,8 +134,7 @@
                @keyup.left="left(index)"
                :id="'cell-' + index"
                :value="values[index]"
-               :class="{ black: blacks[index] }"
-               :data-index="index">
+               :class="{ black: blacks[index], empty: values[index] === '-' }">
       </div>
     </div>
   </div>
@@ -127,8 +147,7 @@
   }
 
   function flatten(A) {
-    const flat = [].concat(...A);
-    return flat.some(Array.isArray) ? flatten(flat) : flat;
+    return A.reduce((agg, a) => agg.concat(a), [])
   }
 
   function transposeTables(n) {
@@ -150,10 +169,7 @@
 
     const rotate90 = flatten(columns.map(col => col.slice(0).reverse()))
     const rotate270 = rotate90.slice(0).reverse()
-    const rotate180 = flatten(A.reduce((agg, a, i) => {
-      agg[N - 1 - i] = a
-      return agg
-    }, []))
+    const rotate180 = A.slice(0).reverse()
 
     return {
       "90": rotate90,
@@ -172,9 +188,10 @@
         blacks: [],
         transpose: {},
         numbers: [],
+        symmetric: true,
         info: '',
-        shareDisplay: false,
-        shareURL: '',
+        showShare: false,
+        showOptions: false,
       }
     },
     watch: {
@@ -189,12 +206,7 @@
       const v = u.searchParams.get('v')
       const n = u.searchParams.get('n')
       if (v && n) {
-        const values = v.split('').map(v => {
-          if (v === '-') return '`'
-          if (v === '_') return ''
-          return v
-        })
-        this.load(parseInt(n), values)
+        this.load(parseInt(n), v.split(''))
       } else {
         this.transpose = transposeTables(this.n)
       }
@@ -208,6 +220,7 @@
       N() {
         return this.n * this.n
       },
+      shareURL() { return document.location.origin + document.location.pathname + `?n=${this.n}&v=${this.values.join('')}` },
     },
     methods: {
       indexAbove(index) {
@@ -277,12 +290,12 @@ indexBelow: ${this.indexBelow(index)}
         }
       },
       process(event, index) {
-        const value = event.target.value
+        const value = event.target.value.trim() || "-"
         this.values.splice(index, 1, value)
         if (!this.cellRight(index) && this.cellBelow(index)) this.focus(this.indexBelow(index))
         else this.focus(this.indexRight(index))
         const wasBlack = !!this.blacks[index]
-        const black = value === '`'
+        const black = value === '.'
         if ((black && !wasBlack) || (!black && wasBlack)) {
           this.processBlack(index, black)
           this.updateNumbers()
@@ -290,13 +303,18 @@ indexBelow: ${this.indexBelow(index)}
       },
       processBlack(index, black) {
 
+        this.blacks.splice(index, 1, black)
+        if (!this.symmetric) return
         const other = [
           this.transpose['90'][index],
           this.transpose['180'][index],
           this.transpose['270'][index],
         ];
-        other.forEach(i => this.blacks.splice(i, 1, black))
-        this.blacks.splice(index, 1, black)
+        const replacement = black ? '.' : '-'
+        other.forEach(i => {
+          this.blacks.splice(i, 1, black)
+          this.values.splice(i, 1, replacement)
+        })
       },
 
       updateGrid(n) {
@@ -305,27 +323,22 @@ indexBelow: ${this.indexBelow(index)}
       },
       clear() {
         const N = this.n * this.n
-        this.values = Array(N).fill("")
+        this.values = Array(N).fill("-")
         this.blacks = Array(N).fill(false)
         this.numbers = Array(N).fill(0)
       },
       save(event) {
         const btn = event.target
-        btn.style.backgroundColor = 'darkseagreen'
-        setTimeout(() => btn.style.backgroundColor = '', 1000)
         localStorage.setItem('c', JSON.stringify({
           n: this.n,
           values: this.values,
         }))
+        btn.style.backgroundColor = 'darkseagreen'
+        setTimeout(() => btn.style.backgroundColor = '', 1000)
+
       },
       share() {
-        const values = this.values.map(v => {
-          if (v === '') return '_'
-          if (v === '`') return '-'
-          return v
-        })
-        this.shareURL = document.location.origin + document.location.pathname + `?n=${this.n}&v=${values.join('')}`
-        this.shareDisplay = true
+        this.showShare = true
         setTimeout(() => this.$refs.share.select(), 10)
       },
       copy() {
@@ -338,13 +351,9 @@ indexBelow: ${this.indexBelow(index)}
       },
       load(n, values) {
         this.n = n
+        this.blacks = values.map(v => v === '.')
         this.values = values
         this.transpose = transposeTables(n)
-        const blacks = values.map(v => v === '`')
-        this.blacks = blacks
-        blacks.forEach((b, i) => {
-          if (b) this.processBlack(i, b)
-        })
         this.updateNumbers()
       },
       updateNumbers() {
