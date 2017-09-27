@@ -1,0 +1,391 @@
+<div style="text-align: center; margin-bottom: 1rem">
+  <button on:click="set({showOptions: true})">options</button>
+  <button on:click="clear()">clear</button>
+  <button on:click="save(event)">save</button>
+  <button on:click="loadFromStorage()">load</button>
+  <button on:click="set({showHelp: true})">help</button>
+  <button on:click="share()">share</button>
+</div>
+
+{{#if showOptions}}
+<div style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem">
+  <label>Rows</label>
+  <input name="rows" type="number" step="1" min="2" max="30" bind:value="rows" style="min-width: 50px">
+  <label>Columns</label>
+  <input name="columns" type="number" step="1" min="2" max="30" bind:value="columns" style="min-width: 50px">
+  <label>Symmetric</label>
+  <input type="checkbox" bind:checked="symmetric">
+  <button on:click="set({showOptions: false})" style="margin-left: 0.3rem">hide</button>
+</div>
+{{/if}}
+
+{{#if showShare}}
+<div style="display: flex; margin-bottom: 1rem; max-width: 600px; margin-left: auto; margin-right: auto">
+  <input bind:value="shareURL" ref:share style="flex-grow: 1">
+  <button on:click="copy()" style="margin-left: 0.3rem">copy</button>
+  <button on:click="set({showShare: false})" style="margin-left: 0.3rem">hide</button>
+</div>
+{{/if}}
+
+{{#if showHelp}}
+<div style="margin-bottom: 1rem; max-width: 600px; margin-left: auto; margin-right: auto">
+    <p>Enter a dot make a cell black.</p>
+    <p>Navigate with arrow keys.</p>
+    <button on:click="set({showHelp: false})">hide</button>
+</div>
+{{/if}}
+
+<pre style="position: fixed;left: 10px; top:10px">{{info}}</pre>
+<div class="grid" ref:grid>
+
+    {{#each displayedValues as val, index}}
+    <div class="cell-container">
+    {{#if numbers[index] !== 0}}
+    <span class="cell-number">{{ numbers[index] }}</span>
+    {{/if}}
+    <input class="cell {{blacks[index] ? 'black' : ''}} {{values[index] === '-' ? 'empty' : ''}}" id="cell-{{index}}" on:input="process(event, index)" on:focus="didFocus(event, index)" on:keyup="moveFocus(event, index)" bind:value="val">
+    </div>
+  {{/each}}
+
+</div>
+
+
+<script>
+
+  function range(n) {
+    return Array.from(Array(n).keys())
+  }
+
+  function flatten(A) {
+    return A.reduce((agg, a) => agg.concat(a), [])
+  }
+
+  function transposeTables(numRows, numColumns) {
+
+    const N = numRows * numColumns
+    const A = range(N)
+    const columns = Array(numColumns).fill(0).map(() => [])
+
+    A.forEach((a, i) => {
+      columns[i % numRows].push(a)
+    })
+
+    const rotate90 = flatten(columns.map(col => col.slice(0).reverse()))
+    const rotate270 = rotate90.slice(0).reverse()
+    const rotate180 = A.slice(0).reverse()
+
+    return {
+      "90": rotate90,
+      "180": rotate180,
+      "270": rotate270,
+    }
+  }
+
+
+  //  bind:class="{ black: blacks[index], empty: values[index] === '-' }"
+
+  export default {
+    data() {
+      return {
+        rows: 13,
+        columns: 13,
+        values: [],
+        blacks: [],
+        numbers: [],
+        symmetric: true,
+        info: '',
+        showShare: false,
+        showOptions: false,
+        showHelp: false,
+      }
+    },
+    oncreate() {
+      this.clear()
+      const u = new URL(document.location)
+      const r = u.searchParams.get('r')
+      const c = u.searchParams.get('c')
+      const v = u.searchParams.get('v')
+      if (v && r && c) {
+        this.load(parseInt(r), parseInt(c), v.split(''))
+      }
+      this.observe('rows', this.updateGrid)
+      this.observe('columns', this.updateGrid)
+    },
+    computed: {
+      displayedValues: (rows, columns, values) => values.slice(0, rows*columns),
+      size: (rows, columns) => rows * columns,
+      transpose: (symmetric, rows, columns) => {
+        if (!symmetric || (rows !== columns)) return {}
+        return transposeTables(rows, columns)
+      },
+      shareURL(rows, columns, values) {
+        return document.location.origin +
+          document.location.pathname + `?r=${rows}&c=${columns}&v=${values.join('')}`
+      },
+    },
+    methods: {
+      indexAbove(index) {
+        return Math.max(0, index - this.get('columns'))
+      },
+      indexBelow(index) {
+        return Math.min(this.get('size'), index + this.get('columns'))
+      },
+      indexRight(index) {
+        return Math.min(this.get('size'), index + 1)
+      },
+      indexLeft(index) {
+        return Math.max(0, index - 1)
+      },
+      moveFocus(event, index) {
+        const keyCode = event.keyCode
+        if (keyCode === 37) this.focusLeft(index)
+        else if (keyCode === 38) this.focusUp(index)
+        else if (keyCode === 39) this.focusRight(index)
+        else if (keyCode === 40) this.focusDown(index)
+      },
+      focusDown(index) {
+        this.focus(this.indexBelow(index))
+      },
+      focusUp(index) {
+        this.focus(this.indexAbove((index)))
+      },
+      focusRight(index) {
+        this.focus(this.indexRight(index))
+      },
+      focusLeft(index) {
+        this.focus(this.indexLeft(index))
+      },
+      rowIndex(index) {
+        return Math.floor(index / this.get('columns'))
+      },
+      columnIndex(index) {
+        return index % this.get('columns')
+      },
+      cellRight(index) {
+        return this.columnIndex(index) === this.get('size') - 1 ? false : !this.get('blacks')[this.indexRight(index)]
+      },
+      cellBelow(index) {
+        return this.rowIndex(index) === this.get('size') - 1 ? false : !this.get('blacks')[this.indexBelow(index)]
+      },
+      cellLeft(index) {
+        return this.columnIndex(index) === 0 ? false : !this.get('blacks')[this.indexLeft(index)]
+      },
+      cellAbove(index) {
+        return this.rowIndex(index) === 0 ? false : !this.get('blacks')[this.indexAbove(index)]
+      },
+
+
+      didFocus(event, index) {
+        event.target.select()
+        const info = `
+index: ${index}
+row: ${this.rowIndex(index)}
+column: ${this.columnIndex(index)}
+cellLeft: ${this.cellLeft(index)}
+cellRight: ${this.cellRight(index)}
+cellAbove: ${this.cellAbove(index)}
+cellBelow: ${this.cellBelow(index)}
+black: ${this.get('blacks')[index]}
+indexBelow: ${this.indexBelow(index)}
+`
+        this.set({info})
+      },
+      focus(index) {
+        const el = document.querySelector(`#cell-${index}`)
+        if (el) {
+          el.focus()
+          el.select()
+        }
+      },
+      classes(index) {
+        let result = 'cell'
+        if (this.get('blacks')[index]) result += ' black'
+        if (this.get('values')[index] === '-') result += ' empty'
+        return result
+      },
+      process(event, index) {
+
+        const value = event.target.value.trim() || "-"
+        const values = this.get('values')
+        values.splice(index, 1, value)
+        this.set({values})
+        if (!this.cellRight(index) && this.cellBelow(index)) this.focus(this.indexBelow(index))
+        else this.focus(this.indexRight(index))
+        const wasBlack = !!this.get('blacks')[index]
+        const black = value === '.'
+        if ((black && !wasBlack) || (!black && wasBlack)) {
+          this.processBlack(index, black)
+          this.updateNumbers()
+        }
+      },
+      processBlack(index, black) {
+        const blacks = this.get('blacks')
+        blacks.splice(index, 1, black)
+        if (this.get('symmetric')) {
+          const transpose = this.get('transpose')
+          const other = [
+            transpose['90'][index],
+            transpose['180'][index],
+            transpose['270'][index],
+          ]
+          const replacement = black ? '.' : '-'
+          const values = this.get('values')
+          other.forEach(i => {
+            blacks.splice(i, 1, black)
+            values.splice(i, 1, replacement)
+          })
+          this.set({values})
+        }
+        this.set({blacks})
+      },
+
+      updateGrid() {
+        const rows = this.get('rows')
+        const columns = this.get('columns')
+        const symmetric = this.get('symmetric') && (rows === columns)
+        this.set({symmetric})
+        this.refs.grid.style['grid-template-rows'] = `repeat(${rows}, 40px)`
+        this.refs.grid.style['grid-template-columns'] = `repeat(${columns}, 40px)`
+      },
+      clear() {
+        const size = this.get('size')
+        this.set({
+          values: Array(size).fill("-"),
+          blacks: Array(size).fill(false),
+          numbers: Array(size).fill(0),
+        })
+      },
+      save(event) {
+        const btn = event.target
+        localStorage.setItem('backup', JSON.stringify({
+          rows: this.get('rows'),
+          columns: this.get('columns'),
+          values: this.get('values'),
+        }))
+        btn.style.backgroundColor = 'darkseagreen'
+        setTimeout(() => btn.style.backgroundColor = '', 1000)
+
+      },
+      share() {
+        this.set({showShare: true})
+        setTimeout(() => this.refs.share.select(), 10)
+      },
+      copy() {
+        this.refs.share.select()
+        document.execCommand('copy')
+      },
+      loadFromStorage() {
+        const backup = JSON.parse(localStorage.getItem('backup'))
+        this.load(backup.rows, backup.columns, backup.values)
+      },
+      load(rows, columns, values) {
+        this.set({
+          rows,
+          columns,
+          values,
+          blacks: values.map(v => v === '.'),
+        })
+        this.updateNumbers()
+      },
+      updateNumbers() {
+
+        let counter = 1;
+        const blacks = this.get('blacks')
+        const numbers = Array(this.get('size')).fill(0)
+        blacks.forEach((black, index) => {
+          if (black) return 0
+
+          // horizontal || vertical
+          if ((this.cellRight(index) && !this.cellLeft(index)) ||
+            (this.cellBelow(index) && !this.cellAbove(index))) {
+            numbers[index] = counter
+            counter++
+          }
+
+        })
+        this.set({numbers})
+      }
+    }
+  }
+
+</script>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  input {
+    font-family: monospace;
+    padding: .5rem 0.8rem;
+    border: 1px solid #000;
+  }
+
+  .cell {
+    text-transform: uppercase;
+    font-size: 20px;
+    font-weight: 600;
+    width: 100%;
+  }
+
+  .cell:focus {
+    background-color: lightyellow;
+  }
+
+  .black {
+    background-color: #000 !important;
+    color: #000 !important;
+  }
+
+  .empty {
+    color: #fff !important;
+  }
+
+  .grid {
+    display: grid;
+    grid-gap: 0;
+    justify-content: center;
+  }
+
+  #container {
+    padding: 1rem;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  label {
+    margin-left: 0.6rem;
+    margin-right: 0.3rem;
+  }
+
+  button, label {
+    text-transform: uppercase;
+    font-weight: 600;
+    font-family: monospace;
+  }
+
+  button {
+    padding: 0.5rem 0.8rem;
+    background-color: rgba(0, 0, 0, 0);
+    border: 1px solid #000;
+  }
+
+  button:hover {
+    background-color: lightsteelblue;
+    cursor: pointer;
+  }
+
+  .cell-container {
+    position: relative;
+  }
+
+  .cell-number {
+    position: absolute;
+    font-size: 0.7rem;
+    font-weight: 600;
+    top: 0.1rem;
+    left: 0.2rem;
+  }
+
+</style>
