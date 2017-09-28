@@ -1,10 +1,10 @@
 <div style="text-align: center; margin-bottom: 1rem">
-  <button on:click="set({showOptions: true})">options</button>
+  <button on:click="set({showOptions: !showOptions})" class="{{ showOptions ? 'active' : '' }}">options</button>
   <button on:click="clear()">clear</button>
   <button on:click="save(event)">save</button>
   <button on:click="loadFromStorage()">load</button>
-  <button on:click="set({showHelp: true})">help</button>
-  <button on:click="share()">share</button>
+  <button on:click="set({showHelp: !showHelp})" class="{{ showHelp ? 'active' : '' }}">help</button>
+  <button on:click="share()" class="{{ showShare ? 'active' : '' }}">share</button>
 </div>
 
 {{#if showOptions}}
@@ -14,8 +14,7 @@
   <label>Columns</label>
   <input name="columns" type="number" step="1" min="2" max="30" bind:value="columns" style="min-width: 50px">
   <label>Symmetric</label>
-  <input type="checkbox" bind:checked="symmetric">
-  <button on:click="set({showOptions: false})" style="margin-left: 0.3rem">hide</button>
+  <input type="checkbox" bind:checked="symmetric" disabled="{{ rows !== columns }}">
 </div>
 {{/if}}
 
@@ -28,17 +27,16 @@
 {{/if}}
 
 {{#if showHelp}}
-<div style="margin-bottom: 1rem; max-width: 600px; margin-left: auto; margin-right: auto">
+<div class="help">
     <p>Enter a dot make a cell black.</p>
     <p>Navigate with arrow keys.</p>
-    <button on:click="set({showHelp: false})">hide</button>
 </div>
 {{/if}}
 
 <pre style="position: fixed;left: 10px; top:10px">{{info}}</pre>
 <div class="grid" ref:grid>
 
-    {{#each displayedValues as val, index}}
+    {{#each values.slice(0, size) as val, index}}
     <div class="cell-container">
     {{#if numbers[index] !== 0}}
     <span class="cell-number">{{ numbers[index] }}</span>
@@ -81,9 +79,6 @@
     }
   }
 
-
-  //  bind:class="{ black: blacks[index], empty: values[index] === '-' }"
-
   export default {
     data() {
       return {
@@ -112,7 +107,6 @@
       this.observe('columns', this.updateGrid)
     },
     computed: {
-      displayedValues: (rows, columns, values) => values.slice(0, rows*columns),
       size: (rows, columns) => rows * columns,
       transpose: (symmetric, rows, columns) => {
         if (!symmetric || (rows !== columns)) return {}
@@ -173,7 +167,8 @@
       cellAbove(index) {
         return this.rowIndex(index) === 0 ? false : !this.get('blacks')[this.indexAbove(index)]
       },
-
+      openCellRight(index) { return this.cellRight(index) && this.get('values')[this.indexRight(index)] === '-'},
+      openCellBelow(index) { return this.cellBelow(index) && this.get('values')[this.indexBelow(index)] === '-'},
 
       didFocus(event, index) {
         event.target.select()
@@ -185,6 +180,8 @@ cellLeft: ${this.cellLeft(index)}
 cellRight: ${this.cellRight(index)}
 cellAbove: ${this.cellAbove(index)}
 cellBelow: ${this.cellBelow(index)}
+openRight: ${this.openCellRight(index)}
+openBelow: ${this.openCellBelow(index)}
 black: ${this.get('blacks')[index]}
 indexBelow: ${this.indexBelow(index)}
 `
@@ -197,11 +194,10 @@ indexBelow: ${this.indexBelow(index)}
           el.select()
         }
       },
-      classes(index) {
-        let result = 'cell'
-        if (this.get('blacks')[index]) result += ' black'
-        if (this.get('values')[index] === '-') result += ' empty'
-        return result
+      moveToNext(index) {
+        if (!this.openCellRight(index) && this.openCellBelow(index)) return this.focus(this.indexBelow(index))
+        if (!this.cellRight(index) && this.cellBelow(index)) return this.focus(this.indexBelow(index))
+        this.focus(this.indexRight(index))
       },
       process(event, index) {
 
@@ -209,8 +205,7 @@ indexBelow: ${this.indexBelow(index)}
         const values = this.get('values')
         values.splice(index, 1, value)
         this.set({values})
-        if (!this.cellRight(index) && this.cellBelow(index)) this.focus(this.indexBelow(index))
-        else this.focus(this.indexRight(index))
+        this.moveToNext(index)
         const wasBlack = !!this.get('blacks')[index]
         const black = value === '.'
         if ((black && !wasBlack) || (!black && wasBlack)) {
@@ -267,6 +262,8 @@ indexBelow: ${this.indexBelow(index)}
 
       },
       share() {
+        if (this.get('showShare')) return this.set({showShare: false})
+
         this.set({showShare: true})
         setTimeout(() => this.refs.share.select(), 10)
       },
@@ -313,10 +310,10 @@ indexBelow: ${this.indexBelow(index)}
 <style>
   * {
     box-sizing: border-box;
+    font-family: monospace;
   }
 
   input {
-    font-family: monospace;
     padding: .5rem 0.8rem;
     border: 1px solid #000;
   }
@@ -362,7 +359,6 @@ indexBelow: ${this.indexBelow(index)}
   button, label {
     text-transform: uppercase;
     font-weight: 600;
-    font-family: monospace;
   }
 
   button {
@@ -376,6 +372,11 @@ indexBelow: ${this.indexBelow(index)}
     cursor: pointer;
   }
 
+  button.active {
+    background-color: black;
+    color: white;
+  }
+
   .cell-container {
     position: relative;
   }
@@ -386,6 +387,15 @@ indexBelow: ${this.indexBelow(index)}
     font-weight: 600;
     top: 0.1rem;
     left: 0.2rem;
+  }
+
+  .help {
+    margin-bottom: 1rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1rem;
+    border: 1px solid black;
   }
 
 </style>

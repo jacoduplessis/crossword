@@ -30,14 +30,7 @@ function transposeTables(numRows, numColumns) {
   }
 }
 
-
-//  bind:class="{ black: blacks[index], empty: values[index] === '-' }"
-
-function displayedValues(rows, columns, values) {
-		return values.slice(0, rows*columns);
-	}
-
-	function size(rows, columns) {
+function size(rows, columns) {
 		return rows * columns;
 	}
 
@@ -116,7 +109,8 @@ function displayedValues(rows, columns, values) {
   cellAbove(index) {
     return this.rowIndex(index) === 0 ? false : !this.get('blacks')[this.indexAbove(index)]
   },
-
+  openCellRight(index) { return this.cellRight(index) && this.get('values')[this.indexRight(index)] === '-'},
+  openCellBelow(index) { return this.cellBelow(index) && this.get('values')[this.indexBelow(index)] === '-'},
 
   didFocus(event, index) {
     event.target.select()
@@ -128,6 +122,8 @@ cellLeft: ${this.cellLeft(index)}
 cellRight: ${this.cellRight(index)}
 cellAbove: ${this.cellAbove(index)}
 cellBelow: ${this.cellBelow(index)}
+openRight: ${this.openCellRight(index)}
+openBelow: ${this.openCellBelow(index)}
 black: ${this.get('blacks')[index]}
 indexBelow: ${this.indexBelow(index)}
 `
@@ -140,11 +136,10 @@ indexBelow: ${this.indexBelow(index)}
       el.select()
     }
   },
-  classes(index) {
-    let result = 'cell'
-    if (this.get('blacks')[index]) result += ' black'
-    if (this.get('values')[index] === '-') result += ' empty'
-    return result
+  moveToNext(index) {
+    if (!this.openCellRight(index) && this.openCellBelow(index)) return this.focus(this.indexBelow(index))
+    if (!this.cellRight(index) && this.cellBelow(index)) return this.focus(this.indexBelow(index))
+    this.focus(this.indexRight(index))
   },
   process(event, index) {
 
@@ -152,8 +147,7 @@ indexBelow: ${this.indexBelow(index)}
     const values = this.get('values')
     values.splice(index, 1, value)
     this.set({values})
-    if (!this.cellRight(index) && this.cellBelow(index)) this.focus(this.indexBelow(index))
-    else this.focus(this.indexRight(index))
+    this.moveToNext(index)
     const wasBlack = !!this.get('blacks')[index]
     const black = value === '.'
     if ((black && !wasBlack) || (!black && wasBlack)) {
@@ -210,6 +204,8 @@ indexBelow: ${this.indexBelow(index)}
 
   },
   share() {
+    if (this.get('showShare')) return this.set({showShare: false})
+
     this.set({showShare: true})
     setTimeout(() => this.refs.share.select(), 10)
   },
@@ -264,21 +260,22 @@ indexBelow: ${this.indexBelow(index)}
 };
 
 	function encapsulateStyles(node) {
-		setAttribute(node, "svelte-3495342531", "");
+		setAttribute(node, "svelte-2428691545", "");
 	}
 
 	function add_css() {
 		var style = createElement("style");
-		style.id = 'svelte-3495342531-style';
-		style.textContent = "[svelte-3495342531]{box-sizing:border-box}input[svelte-3495342531]{font-family:monospace;padding:.5rem 0.8rem;border:1px solid #000}.cell[svelte-3495342531]{text-transform:uppercase;font-size:20px;font-weight:600;width:100%}.cell[svelte-3495342531]:focus{background-color:lightyellow}.black[svelte-3495342531]{background-color:#000 !important;color:#000 !important}.empty[svelte-3495342531]{color:#fff !important}.grid[svelte-3495342531]{display:grid;grid-gap:0;justify-content:center}#container[svelte-3495342531]{padding:1rem;max-width:800px;margin-left:auto;margin-right:auto}label[svelte-3495342531]{margin-left:0.6rem;margin-right:0.3rem}button[svelte-3495342531],label[svelte-3495342531]{text-transform:uppercase;font-weight:600;font-family:monospace}button[svelte-3495342531]{padding:0.5rem 0.8rem;background-color:rgba(0, 0, 0, 0);border:1px solid #000}button[svelte-3495342531]:hover{background-color:lightsteelblue;cursor:pointer}.cell-container[svelte-3495342531]{position:relative}.cell-number[svelte-3495342531]{position:absolute;font-size:0.7rem;font-weight:600;top:0.1rem;left:0.2rem}";
+		style.id = 'svelte-2428691545-style';
+		style.textContent = "[svelte-2428691545]{box-sizing:border-box;font-family:monospace}input[svelte-2428691545]{padding:.5rem 0.8rem;border:1px solid #000}.cell[svelte-2428691545]{text-transform:uppercase;font-size:20px;font-weight:600;width:100%}.cell[svelte-2428691545]:focus{background-color:lightyellow}.black[svelte-2428691545]{background-color:#000 !important;color:#000 !important}.empty[svelte-2428691545]{color:#fff !important}.grid[svelte-2428691545]{display:grid;grid-gap:0;justify-content:center}#container[svelte-2428691545]{padding:1rem;max-width:800px;margin-left:auto;margin-right:auto}label[svelte-2428691545]{margin-left:0.6rem;margin-right:0.3rem}button[svelte-2428691545],label[svelte-2428691545]{text-transform:uppercase;font-weight:600}button[svelte-2428691545]{padding:0.5rem 0.8rem;background-color:rgba(0, 0, 0, 0);border:1px solid #000}button[svelte-2428691545]:hover{background-color:lightsteelblue;cursor:pointer}button.active[svelte-2428691545]{background-color:black;color:white}.cell-container[svelte-2428691545]{position:relative}.cell-number[svelte-2428691545]{position:absolute;font-size:0.7rem;font-weight:600;top:0.1rem;left:0.2rem}.help[svelte-2428691545]{margin-bottom:1rem;max-width:600px;margin-left:auto;margin-right:auto;padding:1rem;border:1px solid black}";
 		appendNode(style, document.head);
 	}
 
 	function create_main_fragment(state, component) {
-		var div, button, text_1, button_1, text_3, button_2, text_5, button_3, text_7, button_4, text_9, button_5, text_12, text_13, text_14, text_15, pre, text_16, text_17, div_1;
+		var div, button, button_class_value, text_1, button_1, text_3, button_2, text_5, button_3, text_7, button_4, button_4_class_value, text_9, button_5, button_5_class_value, text_12, text_13, text_14, text_15, pre, text_16, text_17, div_1;
 
 		function click_handler(event) {
-			component.set({showOptions: true});
+			var state = component.get();
+			component.set({showOptions: !state.showOptions});
 		}
 
 		function click_handler_1(event) {
@@ -294,7 +291,8 @@ indexBelow: ${this.indexBelow(index)}
 		}
 
 		function click_handler_4(event) {
-			component.set({showHelp: true});
+			var state = component.get();
+			component.set({showHelp: !state.showHelp});
 		}
 
 		function click_handler_5(event) {
@@ -307,12 +305,12 @@ indexBelow: ${this.indexBelow(index)}
 
 		var if_block_2 = (state.showHelp) && create_if_block_2(state, component);
 
-		var displayedValues_1 = state.displayedValues;
+		var each_value = state.values.slice(0, state.size);
 
 		var each_blocks = [];
 
-		for (var i = 0; i < displayedValues_1.length; i += 1) {
-			each_blocks[i] = create_each_block(state, displayedValues_1, displayedValues_1[i], i, component);
+		for (var i = 0; i < each_value.length; i += 1) {
+			each_blocks[i] = create_each_block(state, each_value, each_value[i], i, component);
 		}
 
 		return {
@@ -358,6 +356,7 @@ indexBelow: ${this.indexBelow(index)}
 				setStyle(div, "text-align", "center");
 				setStyle(div, "margin-bottom", "1rem");
 				encapsulateStyles(button);
+				button.className = button_class_value = state.showOptions ? 'active' : '';
 				addListener(button, "click", click_handler);
 				encapsulateStyles(button_1);
 				addListener(button_1, "click", click_handler_1);
@@ -366,8 +365,10 @@ indexBelow: ${this.indexBelow(index)}
 				encapsulateStyles(button_3);
 				addListener(button_3, "click", click_handler_3);
 				encapsulateStyles(button_4);
+				button_4.className = button_4_class_value = state.showHelp ? 'active' : '';
 				addListener(button_4, "click", click_handler_4);
 				encapsulateStyles(button_5);
+				button_5.className = button_5_class_value = state.showShare ? 'active' : '';
 				addListener(button_5, "click", click_handler_5);
 				encapsulateStyles(pre);
 				setStyle(pre, "position", "fixed");
@@ -409,6 +410,18 @@ indexBelow: ${this.indexBelow(index)}
 			},
 
 			p: function update(changed, state) {
+				if ((changed.showOptions) && button_class_value !== (button_class_value = state.showOptions ? 'active' : '')) {
+					button.className = button_class_value;
+				}
+
+				if ((changed.showHelp) && button_4_class_value !== (button_4_class_value = state.showHelp ? 'active' : '')) {
+					button_4.className = button_4_class_value;
+				}
+
+				if ((changed.showShare) && button_5_class_value !== (button_5_class_value = state.showShare ? 'active' : '')) {
+					button_5.className = button_5_class_value;
+				}
+
 				if (state.showOptions) {
 					if (if_block) {
 						if_block.p(changed, state);
@@ -453,14 +466,14 @@ indexBelow: ${this.indexBelow(index)}
 					text_16.data = state.info;
 				}
 
-				var displayedValues_1 = state.displayedValues;
+				var each_value = state.values.slice(0, state.size);
 
-				if (changed.numbers || changed.blacks || changed.values || changed.event || changed.displayedValues) {
-					for (var i = 0; i < displayedValues_1.length; i += 1) {
+				if (changed.numbers || changed.blacks || changed.values || changed.event || changed.size) {
+					for (var i = 0; i < each_value.length; i += 1) {
 						if (each_blocks[i]) {
-							each_blocks[i].p(changed, state, displayedValues_1, displayedValues_1[i], i);
+							each_blocks[i].p(changed, state, each_value, each_value[i], i);
 						} else {
-							each_blocks[i] = create_each_block(state, displayedValues_1, displayedValues_1[i], i, component);
+							each_blocks[i] = create_each_block(state, each_value, each_value[i], i, component);
 							each_blocks[i].c();
 							each_blocks[i].m(div_1, null);
 						}
@@ -470,7 +483,7 @@ indexBelow: ${this.indexBelow(index)}
 						each_blocks[i].u();
 						each_blocks[i].d();
 					}
-					each_blocks.length = displayedValues_1.length;
+					each_blocks.length = each_value.length;
 				}
 			},
 
@@ -511,7 +524,7 @@ indexBelow: ${this.indexBelow(index)}
 
 	// (10:0) {{#if showOptions}}
 	function create_if_block(state, component) {
-		var div, label, text_1, input, input_updating = false, text_2, label_1, text_4, input_1, input_1_updating = false, text_5, label_2, text_7, input_2, text_8, button;
+		var div, label, text_1, input, input_updating = false, text_2, label_1, text_4, input_1, input_1_updating = false, text_5, label_2, text_7, input_2, input_2_disabled_value;
 
 		function input_input_handler() {
 			input_updating = true;
@@ -527,10 +540,6 @@ indexBelow: ${this.indexBelow(index)}
 
 		function input_2_change_handler() {
 			component.set({ symmetric: input_2.checked });
-		}
-
-		function click_handler(event) {
-			component.set({showOptions: false});
 		}
 
 		return {
@@ -550,9 +559,6 @@ indexBelow: ${this.indexBelow(index)}
 				label_2.textContent = "Symmetric";
 				text_7 = createText("\n  ");
 				input_2 = createElement("input");
-				text_8 = createText("\n  ");
-				button = createElement("button");
-				button.textContent = "hide";
 				this.h();
 			},
 
@@ -583,10 +589,8 @@ indexBelow: ${this.indexBelow(index)}
 				encapsulateStyles(label_2);
 				encapsulateStyles(input_2);
 				input_2.type = "checkbox";
+				input_2.disabled = input_2_disabled_value = state.rows !== state.columns;
 				addListener(input_2, "change", input_2_change_handler);
-				encapsulateStyles(button);
-				setStyle(button, "margin-left", "0.3rem");
-				addListener(button, "click", click_handler);
 			},
 
 			m: function mount(target, anchor) {
@@ -610,9 +614,6 @@ indexBelow: ${this.indexBelow(index)}
 				appendNode(input_2, div);
 
 				input_2.checked = state.symmetric;
-
-				appendNode(text_8, div);
-				appendNode(button, div);
 			},
 
 			p: function update(changed, state) {
@@ -622,6 +623,10 @@ indexBelow: ${this.indexBelow(index)}
 
 				if (!input_1_updating) {
 					input_1.value = state.columns;
+				}
+
+				if ((changed.rows || changed.columns) && input_2_disabled_value !== (input_2_disabled_value = state.rows !== state.columns)) {
+					input_2.disabled = input_2_disabled_value;
 				}
 
 				input_2.checked = state.symmetric;
@@ -635,12 +640,11 @@ indexBelow: ${this.indexBelow(index)}
 				removeListener(input, "input", input_input_handler);
 				removeListener(input_1, "input", input_1_input_handler);
 				removeListener(input_2, "change", input_2_change_handler);
-				removeListener(button, "click", click_handler);
 			}
 		};
 	}
 
-	// (22:0) {{#if showShare}}
+	// (21:0) {{#if showShare}}
 	function create_if_block_1(state, component) {
 		var div, input, input_updating = false, text, button, text_2, button_1;
 
@@ -721,72 +725,47 @@ indexBelow: ${this.indexBelow(index)}
 		};
 	}
 
-	// (30:0) {{#if showHelp}}
+	// (29:0) {{#if showHelp}}
 	function create_if_block_2(state, component) {
-		var div, p, text_1, p_1, text_3, button;
-
-		function click_handler(event) {
-			component.set({showHelp: false});
-		}
+		var div;
 
 		return {
 			c: function create() {
 				div = createElement("div");
-				p = createElement("p");
-				p.textContent = "Enter a dot make a cell black.";
-				text_1 = createText("\n    ");
-				p_1 = createElement("p");
-				p_1.textContent = "Navigate with arrow keys.";
-				text_3 = createText("\n    ");
-				button = createElement("button");
-				button.textContent = "hide";
+				div.innerHTML = "<p svelte-2428691545>Enter a dot make a cell black.</p>\n    <p svelte-2428691545>Navigate with arrow keys.</p>";
 				this.h();
 			},
 
 			h: function hydrate() {
 				encapsulateStyles(div);
-				setStyle(div, "margin-bottom", "1rem");
-				setStyle(div, "max-width", "600px");
-				setStyle(div, "margin-left", "auto");
-				setStyle(div, "margin-right", "auto");
-				encapsulateStyles(p);
-				encapsulateStyles(p_1);
-				encapsulateStyles(button);
-				addListener(button, "click", click_handler);
+				div.className = "help";
 			},
 
 			m: function mount(target, anchor) {
 				insertNode(div, target, anchor);
-				appendNode(p, div);
-				appendNode(text_1, div);
-				appendNode(p_1, div);
-				appendNode(text_3, div);
-				appendNode(button, div);
 			},
 
 			u: function unmount() {
 				detachNode(div);
 			},
 
-			d: function destroy() {
-				removeListener(button, "click", click_handler);
-			}
+			d: noop
 		};
 	}
 
-	// (41:4) {{#each displayedValues as val, index}}
-	function create_each_block(state, displayedValues_1, val, index, component) {
+	// (39:4) {{#each values.slice(0, size) as val, index}}
+	function create_each_block(state, each_value, val, index, component) {
 		var div, text, input, input_class_value, input_id_value, input_updating = false;
 
-		var if_block = (state.numbers[index] !== 0) && create_if_block_3(state, displayedValues_1, val, index, component);
+		var if_block = (state.numbers[index] !== 0) && create_if_block_3(state, each_value, val, index, component);
 
 		function input_input_handler() {
 			input_updating = true;
-			var list = input._svelte.displayedValues_1;
+			var list = input._svelte.each_value;
 			var index = input._svelte.index;
 			list[index] = input.value;
 
-			component.set({displayedValues: component.get('displayedValues') });
+			component.set({values: component.get('values'), size: component.get('size') });
 			input_updating = false;
 		}
 
@@ -812,7 +791,7 @@ indexBelow: ${this.indexBelow(index)}
 
 				input._svelte = {
 					component: component,
-					displayedValues_1: displayedValues_1,
+					each_value: each_value,
 					index: index
 				};
 			},
@@ -826,12 +805,12 @@ indexBelow: ${this.indexBelow(index)}
 				input.value = val;
 			},
 
-			p: function update(changed, state, displayedValues_1, val, index) {
+			p: function update(changed, state, each_value, val, index) {
 				if (state.numbers[index] !== 0) {
 					if (if_block) {
-						if_block.p(changed, state, displayedValues_1, val, index);
+						if_block.p(changed, state, each_value, val, index);
 					} else {
-						if_block = create_if_block_3(state, displayedValues_1, val, index, component);
+						if_block = create_if_block_3(state, each_value, val, index, component);
 						if_block.c();
 						if_block.m(div, text);
 					}
@@ -849,7 +828,7 @@ indexBelow: ${this.indexBelow(index)}
 					input.value = val;
 				}
 
-				input._svelte.displayedValues_1 = displayedValues_1;
+				input._svelte.each_value = each_value;
 				input._svelte.index = index;
 			},
 
@@ -868,8 +847,8 @@ indexBelow: ${this.indexBelow(index)}
 		};
 	}
 
-	// (43:4) {{#if numbers[index] !== 0}}
-	function create_if_block_3(state, displayedValues_1, val, index, component) {
+	// (41:4) {{#if numbers[index] !== 0}}
+	function create_if_block_3(state, each_value, val, index, component) {
 		var span, text_value = state.numbers[index], text;
 
 		return {
@@ -889,7 +868,7 @@ indexBelow: ${this.indexBelow(index)}
 				appendNode(text, span);
 			},
 
-			p: function update(changed, state, displayedValues_1, val, index) {
+			p: function update(changed, state, each_value, val, index) {
 				if ((changed.numbers) && text_value !== (text_value = state.numbers[index])) {
 					text.data = text_value;
 				}
@@ -905,19 +884,19 @@ indexBelow: ${this.indexBelow(index)}
 
 	function input_handler(event) {
 		var component = this._svelte.component;
-		var displayedValues_1 = this._svelte.displayedValues_1, index = this._svelte.index, val = displayedValues_1[index];
+		var each_value = this._svelte.each_value, index = this._svelte.index, val = each_value[index];
 		component.process(event, index);
 	}
 
 	function focus_handler(event) {
 		var component = this._svelte.component;
-		var displayedValues_1 = this._svelte.displayedValues_1, index = this._svelte.index, val = displayedValues_1[index];
+		var each_value = this._svelte.each_value, index = this._svelte.index, val = each_value[index];
 		component.didFocus(event, index);
 	}
 
 	function keyup_handler(event) {
 		var component = this._svelte.component;
-		var displayedValues_1 = this._svelte.displayedValues_1, index = this._svelte.index, val = displayedValues_1[index];
+		var each_value = this._svelte.each_value, index = this._svelte.index, val = each_value[index];
 		component.moveFocus(event, index);
 	}
 
@@ -925,9 +904,9 @@ indexBelow: ${this.indexBelow(index)}
 		init(this, options);
 		this.refs = {};
 		this._state = assign(data(), options.data);
-		this._recompute({ rows: 1, columns: 1, values: 1, symmetric: 1 }, this._state);
+		this._recompute({ rows: 1, columns: 1, symmetric: 1, values: 1 }, this._state);
 
-		if (!document.getElementById("svelte-3495342531-style")) add_css();
+		if (!document.getElementById("svelte-2428691545-style")) add_css();
 
 		var _oncreate = oncreate.bind(this);
 
@@ -961,10 +940,6 @@ indexBelow: ${this.indexBelow(index)}
 	 });
 
 	Crossword.prototype._recompute = function _recompute(changed, state) {
-		if (changed.rows || changed.columns || changed.values) {
-			if (differs(state.displayedValues, (state.displayedValues = displayedValues(state.rows, state.columns, state.values)))) changed.displayedValues = true;
-		}
-
 		if (changed.rows || changed.columns) {
 			if (differs(state.size, (state.size = size(state.rows, state.columns)))) changed.size = true;
 		}
