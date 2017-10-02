@@ -156,10 +156,10 @@
         return index % this.get('columns')
       },
       cellRight(index) {
-        return this.columnIndex(index) === this.get('size') - 1 ? false : !this.get('blacks')[this.indexRight(index)]
+        return this.columnIndex(index) === this.get('columns') - 1 ? false : !this.get('blacks')[this.indexRight(index)]
       },
       cellBelow(index) {
-        return this.rowIndex(index) === this.get('size') - 1 ? false : !this.get('blacks')[this.indexBelow(index)]
+        return this.rowIndex(index) === this.get('rows') - 1 ? false : !this.get('blacks')[this.indexBelow(index)]
       },
       cellLeft(index) {
         return this.columnIndex(index) === 0 ? false : !this.get('blacks')[this.indexLeft(index)]

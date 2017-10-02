@@ -98,10 +98,10 @@ function size(rows, columns) {
     return index % this.get('columns')
   },
   cellRight(index) {
-    return this.columnIndex(index) === this.get('size') - 1 ? false : !this.get('blacks')[this.indexRight(index)]
+    return this.columnIndex(index) === this.get('columns') - 1 ? false : !this.get('blacks')[this.indexRight(index)]
   },
   cellBelow(index) {
-    return this.rowIndex(index) === this.get('size') - 1 ? false : !this.get('blacks')[this.indexBelow(index)]
+    return this.rowIndex(index) === this.get('rows') - 1 ? false : !this.get('blacks')[this.indexBelow(index)]
   },
   cellLeft(index) {
     return this.columnIndex(index) === 0 ? false : !this.get('blacks')[this.indexLeft(index)]
@@ -260,13 +260,13 @@ indexBelow: ${this.indexBelow(index)}
 };
 
 	function encapsulateStyles(node) {
-		setAttribute(node, "svelte-2428691545", "");
+		setAttribute(node, "svelte-1793854551", "");
 	}
 
 	function add_css() {
 		var style = createElement("style");
-		style.id = 'svelte-2428691545-style';
-		style.textContent = "[svelte-2428691545]{box-sizing:border-box;font-family:monospace}input[svelte-2428691545]{padding:.5rem 0.8rem;border:1px solid #000}.cell[svelte-2428691545]{text-transform:uppercase;font-size:20px;font-weight:600;width:100%}.cell[svelte-2428691545]:focus{background-color:lightyellow}.black[svelte-2428691545]{background-color:#000 !important;color:#000 !important}.empty[svelte-2428691545]{color:#fff !important}.grid[svelte-2428691545]{display:grid;grid-gap:0;justify-content:center}#container[svelte-2428691545]{padding:1rem;max-width:800px;margin-left:auto;margin-right:auto}label[svelte-2428691545]{margin-left:0.6rem;margin-right:0.3rem}button[svelte-2428691545],label[svelte-2428691545]{text-transform:uppercase;font-weight:600}button[svelte-2428691545]{padding:0.5rem 0.8rem;background-color:rgba(0, 0, 0, 0);border:1px solid #000}button[svelte-2428691545]:hover{background-color:lightsteelblue;cursor:pointer}button.active[svelte-2428691545]{background-color:black;color:white}.cell-container[svelte-2428691545]{position:relative}.cell-number[svelte-2428691545]{position:absolute;font-size:0.7rem;font-weight:600;top:0.1rem;left:0.2rem}.help[svelte-2428691545]{margin-bottom:1rem;max-width:600px;margin-left:auto;margin-right:auto;padding:1rem;border:1px solid black}";
+		style.id = 'svelte-1793854551-style';
+		style.textContent = "[svelte-1793854551]{box-sizing:border-box;font-family:monospace}input[svelte-1793854551]{padding:.5rem 0.8rem;border:1px solid #000}.cell[svelte-1793854551]{text-transform:uppercase;font-size:20px;font-weight:600;width:100%}.cell[svelte-1793854551]:focus{background-color:lightyellow}.black[svelte-1793854551]{background-color:#000 !important;color:#000 !important}.empty[svelte-1793854551]{color:#fff !important}.grid[svelte-1793854551]{display:grid;grid-gap:0;justify-content:center}#container[svelte-1793854551]{padding:1rem;max-width:800px;margin-left:auto;margin-right:auto}label[svelte-1793854551]{margin-left:0.6rem;margin-right:0.3rem}button[svelte-1793854551],label[svelte-1793854551]{text-transform:uppercase;font-weight:600}button[svelte-1793854551]{padding:0.5rem 0.8rem;background-color:rgba(0, 0, 0, 0);border:1px solid #000}button[svelte-1793854551]:hover{background-color:lightsteelblue;cursor:pointer}button.active[svelte-1793854551]{background-color:black;color:white}.cell-container[svelte-1793854551]{position:relative}.cell-number[svelte-1793854551]{position:absolute;font-size:0.7rem;font-weight:600;top:0.1rem;left:0.2rem}.help[svelte-1793854551]{margin-bottom:1rem;max-width:600px;margin-left:auto;margin-right:auto;padding:1rem;border:1px solid black}";
 		appendNode(style, document.head);
 	}
 
@@ -732,7 +732,7 @@ indexBelow: ${this.indexBelow(index)}
 		return {
 			c: function create() {
 				div = createElement("div");
-				div.innerHTML = "<p svelte-2428691545>Enter a dot make a cell black.</p>\n    <p svelte-2428691545>Navigate with arrow keys.</p>";
+				div.innerHTML = "<p svelte-1793854551>Enter a dot make a cell black.</p>\n    <p svelte-1793854551>Navigate with arrow keys.</p>";
 				this.h();
 			},
 
@@ -906,7 +906,7 @@ indexBelow: ${this.indexBelow(index)}
 		this._state = assign(data(), options.data);
 		this._recompute({ rows: 1, columns: 1, symmetric: 1, values: 1 }, this._state);
 
-		if (!document.getElementById("svelte-2428691545-style")) add_css();
+		if (!document.getElementById("svelte-1793854551-style")) add_css();
 
 		var _oncreate = oncreate.bind(this);
 
