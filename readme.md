@@ -30,10 +30,20 @@ Requires a modern browser.
 - Service worker for offline usage
 - Clues
 
+## Build
+
+`node build.js`
+
 ## License
 
 If you want to use embed this app on your own site, 
 please contact me via [email](mailto:jaco@jacoduplessis.co.za). 
 Commercial usage will require a paid license.
+
+## Changelog
+
+**0.3 — 03 Feb 2018**
+
+Keep track of movement direction to jump to intended cell when typing
 
  

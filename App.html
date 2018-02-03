@@ -92,6 +92,7 @@
         showShare: false,
         showOptions: false,
         showHelp: false,
+        lastMovementDirection: null,
       }
     },
     oncreate() {
@@ -184,6 +185,7 @@ openRight: ${this.openCellRight(index)}
 openBelow: ${this.openCellBelow(index)}
 black: ${this.get('blacks')[index]}
 indexBelow: ${this.indexBelow(index)}
+lastDir: ${this.get('lastMovementDirection')}
 `
         this.set({info})
       },
@@ -195,8 +197,19 @@ indexBelow: ${this.indexBelow(index)}
         }
       },
       moveToNext(index) {
-        if (!this.openCellRight(index) && this.openCellBelow(index)) return this.focus(this.indexBelow(index))
-        if (!this.cellRight(index) && this.cellBelow(index)) return this.focus(this.indexBelow(index))
+        if (!this.openCellRight(index) && this.openCellBelow(index)) {
+          this.set({lastMovementDirection: 'down'})
+          return this.focus(this.indexBelow(index))
+        }
+        if (!this.cellRight(index) && this.cellBelow(index)) {
+          this.set({lastMovementDirection: 'down'})
+          return this.focus(this.indexBelow(index))
+        }
+        if (this.cellRight(index) && this.cellBelow(index) && this.get('lastMovementDirection') === 'down') {
+          this.set({lastMovementDirection: 'down'})
+          return this.focus(this.indexBelow(index))
+        }
+        this.set({lastMovementDirection: 'right'})
         this.focus(this.indexRight(index))
       },
       process(event, index) {
