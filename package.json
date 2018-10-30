@@ -4,6 +4,6 @@
   "repository": "git@github.com:jacoduplessis/crossword.git",
   "author": "Jaco du Plessis <jaco@jacoduplessis.co.za>",
   "dependencies": {
-    "svelte": "^1"
+    "svelte": "2"
   }
 }

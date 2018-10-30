@@ -1,49 +1,50 @@
 <div style="text-align: center; margin-bottom: 1rem">
-  <button on:click="set({showOptions: !showOptions})" class="{{ showOptions ? 'active' : '' }}">options</button>
+  <button on:click="set({showOptions: !showOptions})" class="{ showOptions ? 'active' : '' }">options</button>
   <button on:click="clear()">clear</button>
   <button on:click="save(event)">save</button>
   <button on:click="loadFromStorage()">load</button>
-  <button on:click="set({showHelp: !showHelp})" class="{{ showHelp ? 'active' : '' }}">help</button>
-  <button on:click="share()" class="{{ showShare ? 'active' : '' }}">share</button>
+  <button on:click="set({showHelp: !showHelp})" class="{ showHelp ? 'active' : '' }">help</button>
+  <button on:click="share()" class="{ showShare ? 'active' : '' }">share</button>
 </div>
 
-{{#if showOptions}}
+{#if showOptions}
 <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem">
   <label>Rows</label>
   <input name="rows" type="number" step="1" min="2" max="30" bind:value="rows" style="min-width: 50px">
   <label>Columns</label>
   <input name="columns" type="number" step="1" min="2" max="30" bind:value="columns" style="min-width: 50px">
   <label>Symmetric</label>
-  <input type="checkbox" bind:checked="symmetric" disabled="{{ rows !== columns }}">
+  <input type="checkbox" bind:checked="symmetric" disabled="{ rows !== columns }">
 </div>
-{{/if}}
+{/if}
 
-{{#if showShare}}
+{#if showShare}
 <div style="display: flex; margin-bottom: 1rem; max-width: 600px; margin-left: auto; margin-right: auto">
   <input bind:value="shareURL" ref:share style="flex-grow: 1">
   <button on:click="copy()" style="margin-left: 0.3rem">copy</button>
   <button on:click="set({showShare: false})" style="margin-left: 0.3rem">hide</button>
 </div>
-{{/if}}
+{/if}
 
-{{#if showHelp}}
+{#if showHelp}
 <div class="help">
     <p>Enter a dot make a cell black.</p>
     <p>Navigate with arrow keys.</p>
 </div>
-{{/if}}
+{/if}
 
-<pre style="position: fixed;left: 10px; top:10px">{{info}}</pre>
+<pre style="position: fixed;left: 10px; top:10px">{info}</pre>
+
 <div class="grid" ref:grid>
 
-    {{#each values.slice(0, size) as val, index}}
+    {#each values.slice(0, size) as val, index}
     <div class="cell-container">
-    {{#if numbers[index] !== 0}}
-    <span class="cell-number">{{ numbers[index] }}</span>
-    {{/if}}
-    <input class="cell {{blacks[index] ? 'black' : ''}} {{values[index] === '-' ? 'empty' : ''}}" id="cell-{{index}}" on:input="process(event, index)" on:focus="didFocus(event, index)" on:keyup="moveFocus(event, index)" bind:value="val">
+    {#if numbers[index] !== 0}
+    <span class="cell-number">{ numbers[index] }</span>
+    {/if}
+    <input class="cell {blacks[index] ? 'black' : ''} {values[index] === '-' ? 'empty' : ''}" id="cell-{index}" on:input="process(event, index)" on:focus="didFocus(event, index)" on:keyup="moveFocus(event, index)" bind:value="val">
     </div>
-  {{/each}}
+  {/each}
 
 </div>
 
@@ -95,6 +96,13 @@
         lastMovementDirection: null,
       }
     },
+    onstate({changed,current,previous}) {
+      if (changed.rows || changed.columns) {
+        const callback = this.updateGrid.bind(this)
+        if (!this.refs.grid) setTimeout(callback, 200)
+        else callback()
+      }
+    },
     oncreate() {
       this.clear()
       const u = new URL(document.location)
@@ -104,29 +112,30 @@
       if (v && r && c) {
         this.load(parseInt(r), parseInt(c), v.split(''))
       }
-      this.observe('rows', this.updateGrid)
-      this.observe('columns', this.updateGrid)
     },
     computed: {
-      size: (rows, columns) => rows * columns,
-      transpose: (symmetric, rows, columns) => {
+      size: ({rows, columns}) => rows * columns,
+      transpose: ({symmetric, rows, columns}) => {
         if (!symmetric || (rows !== columns)) return {}
         return transposeTables(rows, columns)
       },
-      shareURL(rows, columns, values) {
+      shareURL({rows, columns, values}) {
         return document.location.origin +
           document.location.pathname + `?r=${rows}&c=${columns}&v=${values.join('')}`
       },
     },
     methods: {
       indexAbove(index) {
-        return Math.max(0, index - this.get('columns'))
+        const { columns } = this.get()
+        return Math.max(0, index - columns)
       },
       indexBelow(index) {
-        return Math.min(this.get('size'), index + this.get('columns'))
+        const {size, columns} = this.get()
+        return Math.min(size, index + columns)
       },
       indexRight(index) {
-        return Math.min(this.get('size'), index + 1)
+        const {size} = this.get()
+        return Math.min(size, index + 1)
       },
       indexLeft(index) {
         return Math.max(0, index - 1)
@@ -151,25 +160,31 @@
         this.focus(this.indexLeft(index))
       },
       rowIndex(index) {
-        return Math.floor(index / this.get('columns'))
+        const {columns} = this.get()
+        return Math.floor(index / columns)
       },
       columnIndex(index) {
-        return index % this.get('columns')
+        const {columns } = this.get()
+        return index % columns
       },
       cellRight(index) {
-        return this.columnIndex(index) === this.get('columns') - 1 ? false : !this.get('blacks')[this.indexRight(index)]
+        const {columns, blacks} = this.get()
+        return this.columnIndex(index) === columns - 1 ? false : !blacks[this.indexRight(index)]
       },
       cellBelow(index) {
-        return this.rowIndex(index) === this.get('rows') - 1 ? false : !this.get('blacks')[this.indexBelow(index)]
+        const {rows,blacks} = this.get()
+        return this.rowIndex(index) === rows - 1 ? false : !blacks[this.indexBelow(index)]
       },
       cellLeft(index) {
-        return this.columnIndex(index) === 0 ? false : !this.get('blacks')[this.indexLeft(index)]
+        const {blacks} = this.get()
+        return this.columnIndex(index) === 0 ? false : !blacks[this.indexLeft(index)]
       },
       cellAbove(index) {
-        return this.rowIndex(index) === 0 ? false : !this.get('blacks')[this.indexAbove(index)]
+        const {blacks} = this.get()
+        return this.rowIndex(index) === 0 ? false : !blacks[this.indexAbove(index)]
       },
-      openCellRight(index) { return this.cellRight(index) && this.get('values')[this.indexRight(index)] === '-'},
-      openCellBelow(index) { return this.cellBelow(index) && this.get('values')[this.indexBelow(index)] === '-'},
+      openCellRight(index) { return this.cellRight(index) && this.get().values[this.indexRight(index)] === '-'},
+      openCellBelow(index) { return this.cellBelow(index) && this.get().values[this.indexBelow(index)] === '-'},
 
       didFocus(event, index) {
         event.target.select()
@@ -183,9 +198,9 @@ cellAbove: ${this.cellAbove(index)}
 cellBelow: ${this.cellBelow(index)}
 openRight: ${this.openCellRight(index)}
 openBelow: ${this.openCellBelow(index)}
-black: ${this.get('blacks')[index]}
+black: ${this.get().blacks[index]}
 indexBelow: ${this.indexBelow(index)}
-lastDir: ${this.get('lastMovementDirection')}
+lastDir: ${this.get().lastMovementDirection}
 `
         this.set({info})
       },
@@ -205,7 +220,7 @@ lastDir: ${this.get('lastMovementDirection')}
           this.set({lastMovementDirection: 'down'})
           return this.focus(this.indexBelow(index))
         }
-        if (this.cellRight(index) && this.cellBelow(index) && this.get('lastMovementDirection') === 'down') {
+        if (this.cellRight(index) && this.cellBelow(index) && this.get().lastMovementDirection === 'down') {
           this.set({lastMovementDirection: 'down'})
           return this.focus(this.indexBelow(index))
         }
@@ -215,11 +230,12 @@ lastDir: ${this.get('lastMovementDirection')}
       process(event, index) {
 
         const value = event.target.value.trim() || "-"
-        const values = this.get('values')
+        const {blacks, values} = this.get()
+
         values.splice(index, 1, value)
         this.set({values})
         this.moveToNext(index)
-        const wasBlack = !!this.get('blacks')[index]
+        const wasBlack = !!blacks[index]
         const black = value === '.'
         if ((black && !wasBlack) || (!black && wasBlack)) {
           this.processBlack(index, black)
@@ -227,17 +243,16 @@ lastDir: ${this.get('lastMovementDirection')}
         }
       },
       processBlack(index, black) {
-        const blacks = this.get('blacks')
+        const {symmetric, blacks, transpose, values} = this.get()
+       
         blacks.splice(index, 1, black)
-        if (this.get('symmetric')) {
-          const transpose = this.get('transpose')
+        if (symmetric) {
           const other = [
             transpose['90'][index],
             transpose['180'][index],
             transpose['270'][index],
           ]
           const replacement = black ? '.' : '-'
-          const values = this.get('values')
           other.forEach(i => {
             blacks.splice(i, 1, black)
             values.splice(i, 1, replacement)
@@ -248,16 +263,14 @@ lastDir: ${this.get('lastMovementDirection')}
       },
 
       updateGrid() {
-        const rows = this.get('rows')
-        const columns = this.get('columns')
-        const symmetric = this.get('symmetric') && (rows === columns)
-        this.set({symmetric})
+        const {rows,columns,symmetric} = this.get()
+        if (symmetric && rows !== columns) this.set({symmetric: false})
         this.refs.grid.style['grid-template-rows'] = `repeat(${rows}, 40px)`
         this.refs.grid.style['grid-template-columns'] = `repeat(${columns}, 40px)`
       },
       clear() {
-        const size = this.get('size')
-        this.set({
+        const {size } = this.get()
+         this.set({
           values: Array(size).fill("-"),
           blacks: Array(size).fill(false),
           numbers: Array(size).fill(0),
@@ -265,18 +278,14 @@ lastDir: ${this.get('lastMovementDirection')}
       },
       save(event) {
         const btn = event.target
-        localStorage.setItem('backup', JSON.stringify({
-          rows: this.get('rows'),
-          columns: this.get('columns'),
-          values: this.get('values'),
-        }))
+        const {rows,columns,values} = this.get()
+        localStorage.setItem('backup', JSON.stringify({rows, columns, values}))
         btn.style.backgroundColor = 'darkseagreen'
         setTimeout(() => btn.style.backgroundColor = '', 1000)
-
       },
       share() {
-        if (this.get('showShare')) return this.set({showShare: false})
-
+        const {showShare} = this.get()
+        if (showShare) return this.set({showShare: false})
         this.set({showShare: true})
         setTimeout(() => this.refs.share.select(), 10)
       },
@@ -285,8 +294,8 @@ lastDir: ${this.get('lastMovementDirection')}
         document.execCommand('copy')
       },
       loadFromStorage() {
-        const backup = JSON.parse(localStorage.getItem('backup'))
-        this.load(backup.rows, backup.columns, backup.values)
+        const {rows,columns,values} = JSON.parse(localStorage.getItem('backup'))
+        this.load(rows, columns, values)
       },
       load(rows, columns, values) {
         this.set({
@@ -300,8 +309,8 @@ lastDir: ${this.get('lastMovementDirection')}
       updateNumbers() {
 
         let counter = 1;
-        const blacks = this.get('blacks')
-        const numbers = Array(this.get('size')).fill(0)
+        const {blacks,size} = this.get()
+        const numbers = Array(size).fill(0)
         blacks.forEach((black, index) => {
           if (black) return 0
 

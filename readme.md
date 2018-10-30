@@ -45,5 +45,3 @@ Commercial usage will require a paid license.
 **0.3 — 03 Feb 2018**
 
 Keep track of movement direction to jump to intended cell when typing
-
- 
